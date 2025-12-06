@@ -172,17 +172,28 @@ export async function onRequest(context) {
       redirect: 'follow', // 自动跟随重定向
     });
     
+    // 调试信息：输出响应状态
+    const contentLength = proxyResponse.headers.get('content-length');
+    const contentType = proxyResponse.headers.get('content-type');
+    const debugInfo = {
+      status: proxyResponse.status,
+      statusText: proxyResponse.statusText,
+      contentLength: contentLength,
+      contentType: contentType,
+      url: proxyResponse.url, // 最终 URL（如果有重定向）
+    };
+    console.log('Proxy response debug:', JSON.stringify(debugInfo));
+    
     // 检查响应状态
     if (!proxyResponse.ok && proxyResponse.status !== 206) {
       console.error('Proxy response error:', proxyResponse.status, proxyResponse.statusText);
-      return errorResponse(`Video source returned error: ${proxyResponse.status} ${proxyResponse.statusText}`, proxyResponse.status);
+      return errorResponse(`Video source error: ${proxyResponse.status} ${proxyResponse.statusText}. Debug: ${JSON.stringify(debugInfo)}`, proxyResponse.status);
     }
     
     // 检查内容长度
-    const contentLength = proxyResponse.headers.get('content-length');
     if (contentLength === '0') {
       console.error('Empty response from video source');
-      return errorResponse('Video source returned empty content. The video link may be expired or invalid.', 404);
+      return errorResponse(`Empty content. Debug info: ${JSON.stringify(debugInfo)}`, 404);
     }
     
     // 构建响应头
