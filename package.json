@@ -1,0 +1,23 @@
+{
+  "name": "ucks-video-proxy",
+  "version": "1.0.0",
+  "description": "视频代理服务 - 突破视频防盗链限制",
+  "main": "functions/proxy.js",
+  "scripts": {
+    "dev": "wrangler pages dev .",
+    "deploy": "wrangler pages deploy .",
+    "test": "echo \"No tests specified\""
+  },
+  "keywords": [
+    "video",
+    "proxy",
+    "cloudflare",
+    "pages",
+    "anti-hotlink"
+  ],
+  "author": "ucks.cn",
+  "license": "MIT",
+  "devDependencies": {
+    "wrangler": "^3.0.0"
+  }
+}
