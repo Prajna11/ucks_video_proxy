@@ -166,21 +166,25 @@ export async function onRequest(context) {
   // 添加常见的浏览器请求头，增加真实性
   proxyHeaders.set('Accept', '*/*');
   proxyHeaders.set('Accept-Language', 'zh-CN,zh;q=0.9,en;q=0.8');
-  proxyHeaders.set('Sec-Fetch-Dest', 'video');
-  proxyHeaders.set('Sec-Fetch-Mode', 'no-cors');
-  proxyHeaders.set('Sec-Fetch-Site', 'same-origin');
   
   // 发起代理请求
   try {
     const proxyResponse = await fetch(targetUrl, {
       method: request.method,
       headers: proxyHeaders,
+      redirect: 'follow', // 自动跟随重定向
       cf: {
         // Cloudflare 特定选项
         cacheTtl: 3600, // 缓存 1 小时
         cacheEverything: true,
       },
     });
+    
+    // 检查响应状态
+    if (!proxyResponse.ok && proxyResponse.status !== 206) {
+      console.error('Proxy response error:', proxyResponse.status, proxyResponse.statusText);
+      return errorResponse(`Video source returned error: ${proxyResponse.status} ${proxyResponse.statusText}`, proxyResponse.status);
+    }
     
     // 构建响应头
     const responseHeaders = new Headers();
