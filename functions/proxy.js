@@ -144,32 +144,25 @@ export async function onRequest(context) {
     return errorResponse('Referer not allowed or missing', 403);
   }
   
-  // 构建代理请求头
+  // 构建代理请求头 - 尽量简单，避免被检测
   const proxyHeaders = new Headers();
   
-  // 转发特定的请求头
-  FORWARD_HEADERS.forEach(header => {
-    const value = request.headers.get(header);
-    if (value) {
-      proxyHeaders.set(header, value);
-    }
-  });
+  // 只转发 Range 相关的头
+  const rangeHeader = request.headers.get('range');
+  if (rangeHeader) {
+    proxyHeaders.set('Range', rangeHeader);
+  }
   
-  // 设置 User-Agent，模拟浏览器请求
+  // 最小化的请求头配置
   proxyHeaders.set('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36');
+  proxyHeaders.set('Accept', '*/*');
   
-  // 伪造 Referer，对于抖音视频，使用抖音域名作为 Referer
-  if (targetUrlObj.hostname.includes('snssdk.com') || targetUrlObj.hostname.includes('byteimg.com')) {
+  // 对于抖音视频，使用抖音域名作为 Referer
+  if (targetUrlObj.hostname.includes('snssdk.com') || targetUrlObj.hostname.includes('aweme') || targetUrlObj.hostname.includes('byteimg.com')) {
     proxyHeaders.set('Referer', 'https://www.douyin.com/');
   } else {
     proxyHeaders.set('Referer', targetUrlObj.origin + '/');
   }
-  
-  // 添加常见的浏览器请求头，增加真实性
-  proxyHeaders.set('Accept', '*/*');
-  proxyHeaders.set('Accept-Language', 'zh-CN,zh;q=0.9,en;q=0.8');
-  proxyHeaders.set('Accept-Encoding', 'identity');
-  proxyHeaders.set('Connection', 'keep-alive');
   
   // 发起代理请求
   try {
@@ -177,11 +170,6 @@ export async function onRequest(context) {
       method: request.method,
       headers: proxyHeaders,
       redirect: 'follow', // 自动跟随重定向
-      cf: {
-        // Cloudflare 特定选项
-        cacheTtl: 3600, // 缓存 1 小时
-        cacheEverything: true,
-      },
     });
     
     // 检查响应状态
