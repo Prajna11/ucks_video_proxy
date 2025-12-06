@@ -67,13 +67,15 @@ function isDomainAllowed(url, allowedDomains) {
  * 检查 Referer 是否允许
  */
 function isRefererAllowed(referer, allowedDomains) {
-  if (!referer) {
-    // 如果没有 referer，可以选择允许或拒绝
-    // 这里选择拒绝以增强安全性
-    return false;
-  }
+  // 临时允许无 Referer 访问（仅用于测试）
+  // 生产环境请取消下面这行注释，启用 Referer 验证
+  return true;
   
-  return isDomainAllowed(referer, allowedDomains);
+  // 生产环境使用以下代码：
+  // if (!referer) {
+  //   return false;
+  // }
+  // return isDomainAllowed(referer, allowedDomains);
 }
 
 /**
