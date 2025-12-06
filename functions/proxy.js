@@ -21,6 +21,7 @@ const ALLOWED_REFERRER_DOMAINS = [
   'www.ucks.cn',
   'localhost',
   '127.0.0.1',
+  '172.66.47.113',
   // 添加更多允许引用的域名
 ];
 
