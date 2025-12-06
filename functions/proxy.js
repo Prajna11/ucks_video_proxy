@@ -11,6 +11,7 @@ const ALLOWED_VIDEO_DOMAINS = [
   'vd2.bdstatic.com',     // 百度视频
   'video.example.com',
   'cdn.example.com',
+  'aweme.snssdk.com',
   // 添加更多允许的视频源域名
 ];
 
