@@ -156,16 +156,20 @@ export async function onRequest(context) {
   });
   
   // 设置 User-Agent，模拟浏览器请求
-  proxyHeaders.set('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
+  proxyHeaders.set('User-Agent', 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36');
   
-  // 伪造 Referer 和 Origin，绕过防盗链
-  // 设置为目标域名的根路径，让视频源认为是同域请求
-  proxyHeaders.set('Referer', targetUrlObj.origin + '/');
-  proxyHeaders.set('Origin', targetUrlObj.origin);
+  // 伪造 Referer，对于抖音视频，使用抖音域名作为 Referer
+  if (targetUrlObj.hostname.includes('snssdk.com') || targetUrlObj.hostname.includes('byteimg.com')) {
+    proxyHeaders.set('Referer', 'https://www.douyin.com/');
+  } else {
+    proxyHeaders.set('Referer', targetUrlObj.origin + '/');
+  }
   
   // 添加常见的浏览器请求头，增加真实性
   proxyHeaders.set('Accept', '*/*');
   proxyHeaders.set('Accept-Language', 'zh-CN,zh;q=0.9,en;q=0.8');
+  proxyHeaders.set('Accept-Encoding', 'identity');
+  proxyHeaders.set('Connection', 'keep-alive');
   
   // 发起代理请求
   try {
@@ -184,6 +188,13 @@ export async function onRequest(context) {
     if (!proxyResponse.ok && proxyResponse.status !== 206) {
       console.error('Proxy response error:', proxyResponse.status, proxyResponse.statusText);
       return errorResponse(`Video source returned error: ${proxyResponse.status} ${proxyResponse.statusText}`, proxyResponse.status);
+    }
+    
+    // 检查内容长度
+    const contentLength = proxyResponse.headers.get('content-length');
+    if (contentLength === '0') {
+      console.error('Empty response from video source');
+      return errorResponse('Video source returned empty content. The video link may be expired or invalid.', 404);
     }
     
     // 构建响应头
