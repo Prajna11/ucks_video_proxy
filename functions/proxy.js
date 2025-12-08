@@ -2,7 +2,10 @@ const ALLOWED_VIDEO_HOSTS = [
   'snssdk.com',
   'byteimg.com',
   'v.qq.com',
-  'aweme.snssdk.com'
+  'aweme.snssdk.com',
+  'xhscdn.com',
+  'xiaohongshu.com',
+  'xhslink.com'
 ];
 
 const ALLOWED_REFERRERS = [
