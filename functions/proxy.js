@@ -1,4 +1,4 @@
-const ALLOWED_VIDEO_HOSTS = [
+const ALLOWED_HOSTS = [
   'snssdk.com',
   'byteimg.com',
   'v.qq.com',
@@ -24,12 +24,23 @@ const PASS_THROUGH_HEADERS = new Set([
   'expires'
 ]);
 
+const MIME_TYPES = {
+  'video/mp4': 'mp4',
+  'video/webm': 'webm',
+  'video/quicktime': 'mov',
+  'image/jpeg': 'jpg',
+  'image/png': 'png',
+  'image/gif': 'gif',
+  'image/webp': 'webp',
+  'application/octet-stream': 'bin'
+};
+
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Access-Control-Allow-Methods': 'GET, HEAD, OPTIONS',
   'Access-Control-Allow-Headers': 'Range, If-Range, If-Modified-Since, If-None-Match',
   'Access-Control-Max-Age': '86400',
-  'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Accept-Ranges'
+  'Access-Control-Expose-Headers': 'Content-Length, Content-Range, Accept-Ranges, Content-Disposition'
 };
 
 const USER_AGENT = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
@@ -55,6 +66,12 @@ function createError(message, status = 403) {
   });
 }
 
+function getExtension(contentType, urlPath) {
+  if (MIME_TYPES[contentType]) return MIME_TYPES[contentType];
+  const ext = urlPath.split('.').pop();
+  return ext && ext.length < 5 ? ext : 'file';
+}
+
 export async function onRequest(context) {
   const { request } = context;
 
@@ -73,12 +90,12 @@ export async function onRequest(context) {
     return createError('Missing url parameter', 400);
   }
 
-  if (!isHostAllowed(targetUrl, ALLOWED_VIDEO_HOSTS)) {
+  if (!isHostAllowed(targetUrl, ALLOWED_HOSTS)) {
     return createError('Host restricted', 403);
   }
 
   const requestReferer = request.headers.get('Referer');
-  if (!isHostAllowed(requestReferer || '', ALLOWED_REFERRERS)) {
+  if (requestReferer && !isHostAllowed(requestReferer, ALLOWED_REFERRERS)) {
     return createError('Referrer restricted', 403);
   }
 
@@ -105,15 +122,26 @@ export async function onRequest(context) {
     }
 
     const responseHeaders = new Headers();
+    let contentType = 'application/octet-stream';
+
     for (const [key, value] of upstreamResponse.headers) {
-      if (PASS_THROUGH_HEADERS.has(key.toLowerCase())) {
+      const lowerKey = key.toLowerCase();
+      if (PASS_THROUGH_HEADERS.has(lowerKey)) {
         responseHeaders.set(key, value);
+        if (lowerKey === 'content-type') {
+          contentType = value.split(';')[0].trim();
+        }
       }
     }
 
     if (!responseHeaders.has('Cache-Control')) {
       responseHeaders.set('Cache-Control', 'public, max-age=3600');
     }
+
+    const ext = getExtension(contentType, targetUrlObj.pathname);
+    const filename = `${Date.now()}_download.${ext}`;
+    
+    responseHeaders.set('Content-Disposition', `attachment; filename="${filename}"`);
 
     return createResponse(upstreamResponse.body, upstreamResponse.status, responseHeaders);
 
