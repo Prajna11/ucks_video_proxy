@@ -28,10 +28,13 @@ const MIME_TYPES = {
   'video/mp4': 'mp4',
   'video/webm': 'webm',
   'video/quicktime': 'mov',
+  'video/x-flv': 'flv',
+  'video/x-msvideo': 'avi',
   'image/jpeg': 'jpg',
   'image/png': 'png',
   'image/gif': 'gif',
   'image/webp': 'webp',
+  'image/svg+xml': 'svg',
   'application/octet-stream': 'bin'
 };
 
@@ -68,13 +71,15 @@ function createError(message, status = 403) {
 
 function getExtension(contentType, urlPath) {
   if (MIME_TYPES[contentType]) return MIME_TYPES[contentType];
-  const ext = urlPath.split('.').pop();
-  return ext && ext.length < 5 ? ext : 'file';
+  try {
+    const pathname = new URL(urlPath, 'http://dummy.com').pathname;
+    const ext = pathname.split('.').pop();
+    if (ext && ext.length < 5 && ext.length > 1) return ext;
+  } catch {}
+  return 'file';
 }
 
-export async function onRequest(context) {
-  const { request } = context;
-
+async function handleRequest(request) {
   if (request.method === 'OPTIONS') {
     return createResponse(null, 204);
   }
@@ -138,8 +143,9 @@ export async function onRequest(context) {
       responseHeaders.set('Cache-Control', 'public, max-age=3600');
     }
 
-    const ext = getExtension(contentType, targetUrlObj.pathname);
-    const filename = `${Date.now()}_download.${ext}`;
+    const ext = getExtension(contentType, targetUrl);
+    const timestamp = Date.now();
+    const filename = `download_${timestamp}.${ext}`;
     
     responseHeaders.set('Content-Disposition', `attachment; filename="${filename}"`);
 
@@ -149,3 +155,15 @@ export async function onRequest(context) {
     return createError('Gateway Timeout', 502);
   }
 }
+
+export default {
+  async fetch(request, env, ctx) {
+    return handleRequest(request);
+  }
+};
+
+export async function onRequest(context) {
+  return handleRequest(context.request);
+}
+
+export const GET = handleRequest;
