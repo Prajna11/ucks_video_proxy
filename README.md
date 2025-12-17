@@ -35,21 +35,20 @@
 
 如果你希望将其作为现有静态网站的一部分。
 
-1.  在你的项目根目录下创建一个 `functions` 文件夹。
-2.  在文件夹内创建一个文件，例如 `proxy.js` 或 `index.js`。
-3.  将代码粘贴进去。
-4.  部署到 Cloudflare Pages。
-5.  访问地址：`https://你的域名/proxy?url=...` (取决于文件名)。
+1.  确保项目根目录存在 `functions/proxy.js`。
+2.  部署到 Cloudflare Pages。
+3.  访问地址：`https://你的域名/proxy?url=...`。
 
 ### 3\. Vercel Edge Functions
 
 适用于 Next.js 项目或独立 API。
 
-1.  创建一个文件：
-      * **Next.js (App Router):** `app/api/proxy/route.js`
-      * **Next.js (Pages Router):** `pages/api/proxy.js`
-2.  将代码粘贴进去。
-3.  **重要**：确保你的环境支持 Edge Runtime（Next.js App Router 默认支持，Pages Router 需要添加 `export const runtime = 'edge';` 配置，虽然代码中已尽量兼容，但建议检查）。
+1.  确保项目根目录存在 `api/proxy.js`。
+2.  部署到 Vercel。
+3.  默认访问：`https://你的域名/api/proxy?url=...`。
+4.  如果你使用本仓库自带的 `vercel.json`，也可以直接用：
+    - `https://你的域名/?url=...`
+    - `https://你的域名/proxy?url=...`
 
 -----
 
