@@ -105,8 +105,19 @@ export async function handleRequest(request, env, ctx) {
             return createError(`Upstream error: ${upstream.status}`, upstream.status);
         }
 
+        // 206->200: when client did not send Range but channel rule injected one,
+        // upstream returns 206. We normalize to 200 so browser downloads work.
+        const clientSentRange = !!clientRange;
+        const needsNormalize = upstream.status === 206 && !clientSentRange;
+
         const responseHeaders = new Headers();
         const rawContentType = extractPassThroughHeaders(upstream, responseHeaders);
+
+        // 206->200: remove Content-Range and Content-Length (partial sizes are wrong for full file)
+        if (needsNormalize) {
+            responseHeaders.delete('Content-Range');
+            responseHeaders.delete('Content-Length');
+        }
 
         // 当上游返回通用兜底类型时，从 URL 路径重新推断真实后缀与 MIME
         const urlExt2 = getExtension('', targetUrl);  // 纯路径推断，忽略 content-type
@@ -138,7 +149,9 @@ export async function handleRequest(request, env, ctx) {
         responseHeaders.set('X-Proxy-Cache-Ttl', `${browserTtl}/${cdnTtl}`);
         responseHeaders.set('X-Proxy-Channel', matchedChannel.name);
 
-        const response = createResponse(upstream.body, upstream.status, responseHeaders);
+        // if client did not send Range but upstream returned 206, respond with 200
+        const responseStatus = needsNormalize ? 200 : upstream.status;
+        const response = createResponse(upstream.body, responseStatus, responseHeaders);
 
         if (isCacheable && hasCloudflareCache && upstream.ok) {
             const put = caches.default.put(cacheKey, response.clone());

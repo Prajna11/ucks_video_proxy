@@ -13,9 +13,9 @@ export const CHANNEL_RULES = [
         headers: {
             'Referer': 'https://www.xinpianchang.com/',
             'Origin': 'https://www.xinpianchang.com',
-            // Range 头由客户端按需发送（播放器自动分片，下载时不发），代理会透传
-            // 不在此处强制注入，否则下载时上游返回 206 导致浏览器报"无法提取文件"
+            'Range': 'bytes=0-',
         },
+
     },
 
     // ── 添加新渠道模板 ──
