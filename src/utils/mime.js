@@ -23,13 +23,17 @@ const AUDIO_EXTS = new Set(['mp3', 'ogg', 'wav', 'aac']);
  * @returns {string}
  */
 export function getExtension(contentType, urlPath) {
-  if (contentType && MIME_TYPES[contentType]) return MIME_TYPES[contentType];
+  // application/octet-stream 是通用兜底类型，不能直接映射 bin，
+  // 优先从 URL 路径推断真实后缀
+  if (contentType && MIME_TYPES[contentType] && contentType !== 'application/octet-stream') {
+    return MIME_TYPES[contentType];
+  }
   try {
     const pathname = new URL(urlPath, 'http://dummy.com').pathname;
     const ext = pathname.split('.').pop().split('?')[0].toLowerCase();
     if (ext && ext.length >= 2 && ext.length <= 5) return ext;
   } catch { /* ignore */ }
-  return 'bin';
+  return contentType === 'application/octet-stream' ? 'bin' : 'bin';
 }
 
 /**

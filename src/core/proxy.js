@@ -9,7 +9,7 @@
 import { buildBrowserHeaders } from './browser-headers.js';
 import { applyChannelHeaders } from './channel-rules.js';
 import { createResponse, createError, buildCacheKeyRequest, extractPassThroughHeaders } from './response.js';
-import { getExtension, getResourceType, getDefaultTtls } from '../utils/mime.js';
+import { getExtension, getResourceType, getDefaultTtls, MIME_TYPES } from '../utils/mime.js';
 import { ALLOWED_HOSTS, ALLOWED_REFERRERS, isHostAllowed, isReferrerAllowed } from '../utils/security.js';
 
 /** 解析 GET 请求参数 */
@@ -106,8 +106,22 @@ export async function handleRequest(request, env, ctx) {
         }
 
         const responseHeaders = new Headers();
-        const contentType = extractPassThroughHeaders(upstream, responseHeaders);
-        const ext = getExtension(contentType, targetUrl);
+        const rawContentType = extractPassThroughHeaders(upstream, responseHeaders);
+
+        // 当上游返回通用兜底类型时，从 URL 路径重新推断真实后缀与 MIME
+        const urlExt2 = getExtension('', targetUrl);  // 纯路径推断，忽略 content-type
+        const ext = rawContentType === 'application/octet-stream' ? urlExt2 : getExtension(rawContentType, targetUrl);
+
+        // 若 content-type 是 octet-stream 但能从 URL 推断出具体类型，则覆盖给客户端
+        let contentType = rawContentType;
+        if (rawContentType === 'application/octet-stream') {
+            const mimeByExt = Object.entries(MIME_TYPES).find(([, v]) => v === ext);
+            if (mimeByExt) {
+                contentType = mimeByExt[0];
+                responseHeaders.set('Content-Type', contentType);
+            }
+        }
+
         const { browserTtl: defBrowser, cdnTtl: defCdn } = getDefaultTtls(contentType, ext);
         const browserTtl = cacheTtlOverride === null
             ? defBrowser
