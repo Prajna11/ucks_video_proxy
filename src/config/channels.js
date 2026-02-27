@@ -19,15 +19,14 @@ export const CHANNEL_RULES = [
     },
 
     // ── 添加新渠道模板 ──
-    // {
-    //   name: 'your-channel',
-    //   domains: ['your-cdn.com'],
-    //   headers: {
-    //     'Referer': 'https://www.your-site.com/',
-    //     'Origin': 'https://www.your-site.com',
-    //     // 'Range': 'bytes=0-',
-    //   },
-    // },
+     {
+      name: 'your-channel',
+      domains: ['tiktok.com','v16-webapp-prime.us.tiktok.com'],
+      headers: {
+        'Referer': 'https://www.tiktok.com/',
+         'Origin': 'https://www.tiktok.com/',
+       },
+     },
 ];
 
 /** 兜底配置（无渠道命中时使用） */
